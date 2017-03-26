@@ -374,6 +374,11 @@ void QHttpThreadDelegate::startRequest()
         connect(httpReply,SIGNAL(preSharedKeyAuthenticationRequired(QSslPreSharedKeyAuthenticator*)),
                 this, SLOT(preSharedKeyAuthenticationRequiredSlot(QSslPreSharedKeyAuthenticator*)));
 #endif
+#ifdef PHANTOM_TIMING_EXTENSIONS
+        connect(httpReply,SIGNAL(dataDecompressionProgress(int, int, int)), this, SLOT(dataDecompressionProgressSlot(int,int,int)));
+        connect(httpReply,SIGNAL(connectionStats(quint64, quint64, quint64, quint64, quint64, quint64, quint64)),
+                this, SLOT(connectionStatsSlot(quint64, quint64, quint64, quint64, quint64, quint64, quint64)));
+#endif
 
         // In the asynchronous HTTP case we can just forward those signals
         // Connect the reply signals that we can directly forward
@@ -655,6 +660,19 @@ void QHttpThreadDelegate::cacheCredentialsSlot(const QHttpNetworkRequest &reques
     authenticationManager->cacheCredentials(request.url(), authenticator);
 }
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+void QHttpThreadDelegate::dataDecompressionProgressSlot(int done, int totalcompressed, int totaldecompressed)
+{
+    emit downloadDecompressionProgress(done, totalcompressed, totaldecompressed);
+}
+
+void QHttpThreadDelegate::connectionStatsSlot(quint64 topened, quint64 tresolved, quint64 tconnected,
+        quint64 tssl, quint64 tsent, quint64 trecv, quint64 tdone)
+{
+    //qDebug() << "Thread Delegate emitting";
+    emit connectionStats(topened, tresolved, tconnected, tssl, tsent, trecv, tdone);
+}
+#endif
 
 #ifndef QT_NO_SSL
 void QHttpThreadDelegate::encryptedSlot()

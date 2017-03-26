@@ -141,6 +141,10 @@ signals:
     void downloadFinished();
     void redirected(const QUrl &url, int httpStatus, int maxRedirectsRemainig);
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    void downloadDecompressionProgress(qint64, qint64, qint64);
+    void connectionStats(quint64 topened, quint64 tresolved, quint64 tconnected, quint64 tssl, quint64 tsent, quint64 trecv, quint64 tdone);
+#endif
 public slots:
     // This are called via QueuedConnection from user thread
     void startRequest();
@@ -165,6 +169,10 @@ protected slots:
     void encryptedSlot();
     void sslErrorsSlot(const QList<QSslError> &errors);
     void preSharedKeyAuthenticationRequiredSlot(QSslPreSharedKeyAuthenticator *authenticator);
+#endif
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    void dataDecompressionProgressSlot(int done, int totalcomp, int totaldecomp);
+    void connectionStatsSlot(quint64, quint64, quint64, quint64, quint64, quint64, quint64);
 #endif
 
     void synchronousAuthenticationRequiredSlot(const QHttpNetworkRequest &request, QAuthenticator *);

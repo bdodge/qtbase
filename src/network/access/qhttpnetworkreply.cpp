@@ -186,6 +186,14 @@ qint64 QHttpNetworkReply::bytesAvailable() const
         return -1;
 }
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+qint64 QHttpNetworkReply::bytesDecompressed() const
+{
+    Q_D(const QHttpNetworkReply);
+    return d->compressedTotal;
+}
+#endif
+
 qint64 QHttpNetworkReply::bytesAvailableNextBlock() const
 {
     Q_D(const QHttpNetworkReply);
@@ -312,6 +320,9 @@ QHttpNetworkReplyPrivate::QHttpNetworkReplyPrivate(const QUrl &newUrl)
     , ssl(false)
     , statusCode(100),
       majorVersion(0), minorVersion(0), bodyLength(0), contentRead(0), totalProgress(0),
+#ifdef PHANTOM_TIMING_EXTENSIONS
+      compressedTotal(0),
+#endif
       chunkedTransferEncoding(false),
       connectionCloseEnabled(true),
       forceConnectionCloseEnabled(false),
@@ -353,6 +364,9 @@ void QHttpNetworkReplyPrivate::clearHttpLayerInformation()
     bodyLength = 0;
     contentRead = 0;
     totalProgress = 0;
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    compressedTotal = 0;
+#endif
     currentChunkSize = 0;
     currentChunkRead = 0;
     lastChunkRead = false;
@@ -766,7 +780,9 @@ qint64 QHttpNetworkReplyPrivate::uncompressBodyData(QByteDataBuffer *in, QByteDa
 
         inflateStrm->avail_in = bIn.size();
         inflateStrm->next_in = reinterpret_cast<Bytef*>(bIn.data());
-
+#ifdef PHANTOM_TIMING_EXTENSIONS
+        compressedTotal += inflateStrm->avail_in;
+#endif
         do {
             QByteArray bOut;
             // make a wild guess about the uncompressed size.

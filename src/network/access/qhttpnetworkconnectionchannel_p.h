@@ -177,6 +177,9 @@ public:
     bool isSocketWaiting() const;
     bool isSocketReading() const;
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    quint64 tOpened, tResolved, tConnected, tSSL, tSent, tRecv, tDone;
+#endif
     protected slots:
     void _q_receiveReply();
     void _q_bytesWritten(qint64 bytes); // proceed sending
@@ -187,7 +190,9 @@ public:
 #ifndef QT_NO_NETWORKPROXY
     void _q_proxyAuthenticationRequired(const QNetworkProxy &proxy, QAuthenticator *auth); // from transparent proxy
 #endif
-
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    void _q_hostFound();
+#endif
     void _q_uploadDataReadyRead();
 
 #ifndef QT_NO_SSL

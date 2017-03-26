@@ -60,7 +60,16 @@
 
 QT_BEGIN_NAMESPACE
 
+
 const int QHttpNetworkConnectionPrivate::defaultHttpChannelCount = 6;
+#ifdef PHANTOM_TIMING_EXTENSIONS
+int QHttpNetworkConnectionPrivate::currentHttpChannelCount = 6;
+// this hack is to avoid header-file include issues, fix this please
+void _phantom_setCurrentHttpChannelCount(int count)
+{
+    QHttpNetworkConnectionPrivate::setHttpChannelCount(count);
+}
+#endif
 
 // The pipeline length. So there will be 4 requests in flight.
 const int QHttpNetworkConnectionPrivate::defaultPipelineLength = 3;
@@ -75,11 +84,19 @@ QHttpNetworkConnectionPrivate::QHttpNetworkConnectionPrivate(const QString &host
 : state(RunningState),
   networkLayerState(Unknown),
   hostName(hostName), port(port), encrypt(encrypt), delayIpv4(true)
+#ifndef PHANTOM_TIMING_EXTENSIONS
 #ifndef QT_NO_SSL
 , channelCount((type == QHttpNetworkConnection::ConnectionTypeSPDY) ? 1 : defaultHttpChannelCount)
 #else
 , channelCount(defaultHttpChannelCount)
 #endif // QT_NO_SSL
+#else
+#ifndef QT_NO_SSL
+, channelCount((type == QHttpNetworkConnection::ConnectionTypeSPDY) ? 1 : currentHttpChannelCount)
+#else
+, channelCount(currentHttpChannelCount)
+#endif // QT_NO_SSL
+#endif
 #ifndef QT_NO_NETWORKPROXY
   , networkProxy(QNetworkProxy::NoProxy)
 #endif

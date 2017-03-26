@@ -52,6 +52,9 @@ inline QNetworkReplyImplPrivate::QNetworkReplyImplPrivate()
       cacheEnabled(false), cacheSaveDevice(0),
       notificationHandlingPaused(false),
       bytesDownloaded(0), lastBytesDownloaded(-1), bytesUploaded(-1), preMigrationDownloaded(-1),
+#ifdef PHANTOM_TIMING_EXTENSIONS
+      compressedBytes(0), readBytes(0), totalBytes(0),
+#endif
       httpStatusCode(0),
       state(Idle)
       , downloadBufferReadPosition(0)
@@ -655,6 +658,10 @@ void QNetworkReplyImplPrivate::appendDownstreamDataSignalEmissions()
     if (preMigrationDownloaded != Q_INT64_C(-1))
         totalSize = totalSize.toLongLong() + preMigrationDownloaded;
     pauseNotificationHandling();
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    totalBytes = totalSize.isNull() ? Q_INT64_C(-1) : totalSize.toLongLong();
+    readBytes = bytesDownloaded;
+#endif
     // important: At the point of this readyRead(), the data parameter list must be empty,
     // else implicit sharing will trigger memcpy when the user is reading data!
     emit q->readyRead();
@@ -901,6 +908,16 @@ void QNetworkReplyImplPrivate::sslErrors(const QList<QSslError> &errors)
 #endif
 }
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+void QNetworkReplyImplPrivate::connectionStats(quint64 topened, quint64 tresolved,
+        quint64 tconnected, quint64 tssl, quint64 tsent, quint64 trecv, quint64 tdone)
+{
+    Q_Q(QNetworkReplyImpl);
+    //qDebug() << "QNetworkReplyImplPrivate emitting, repl=" << q;
+    emit q->connectionStats(topened, tresolved, tconnected, tssl, tsent, trecv, tdone);
+}
+#endif
+
 QNetworkReplyImpl::QNetworkReplyImpl(QObject *parent)
     : QNetworkReply(*new QNetworkReplyImplPrivate, parent)
 {
@@ -988,6 +1005,27 @@ qint64 QNetworkReplyImpl::bytesAvailable() const
 
     return QNetworkReply::bytesAvailable() + d_func()->readBuffer.byteAmount();
 }
+
+#ifdef PHANTOM_TIMING_EXTENSIONS
+qint64 QNetworkReplyImpl::compressedBytes() const
+{
+    Q_D(const QNetworkReplyImpl);
+
+    return d->compressedBytes;
+}
+qint64 QNetworkReplyImpl::readBytes() const
+{
+    Q_D(const QNetworkReplyImpl);
+
+    return d->readBytes;
+}
+qint64 QNetworkReplyImpl::totalBytes() const
+{
+    Q_D(const QNetworkReplyImpl);
+
+    return d->totalBytes;
+}
+#endif
 
 void QNetworkReplyImpl::setReadBufferSize(qint64 size)
 {

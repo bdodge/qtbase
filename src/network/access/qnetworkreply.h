@@ -121,7 +121,11 @@ public:
     bool isFinished() const;
     bool isRunning() const;
     QUrl url() const;
-
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    virtual qint64 compressedBytes() const;
+    virtual qint64 readBytes() const;
+    virtual qint64 totalBytes() const;
+#endif
     // "cooked" headers
     QVariant header(QNetworkRequest::KnownHeaders header) const;
 
@@ -159,6 +163,9 @@ Q_SIGNALS:
 
     void uploadProgress(qint64 bytesSent, qint64 bytesTotal);
     void downloadProgress(qint64 bytesReceived, qint64 bytesTotal);
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    void connectionStats(quint64 topened, quint64 tresolved, quint64 tconnected, quint64 tssl, quint64 tsent, quint64 trecv, quint64 tdone);
+#endif
 
 protected:
     explicit QNetworkReply(QObject *parent = Q_NULLPTR);

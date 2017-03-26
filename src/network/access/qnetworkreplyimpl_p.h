@@ -79,7 +79,11 @@ public:
 
     virtual qint64 readData(char *data, qint64 maxlen) Q_DECL_OVERRIDE;
     virtual bool event(QEvent *) Q_DECL_OVERRIDE;
-
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    virtual qint64 compressedBytes() const;
+    virtual qint64 readBytes() const;
+    virtual qint64 totalBytes() const;
+#endif
     Q_DECLARE_PRIVATE(QNetworkReplyImpl)
     Q_PRIVATE_SLOT(d_func(), void _q_startOperation())
     Q_PRIVATE_SLOT(d_func(), void _q_copyReadyRead())
@@ -160,7 +164,9 @@ public:
     void redirectionRequested(const QUrl &target);
     void encrypted();
     void sslErrors(const QList<QSslError> &errors);
-
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    void connectionStats(quint64 topened, quint64 tresolved, quint64 tconnected, quint64 tssl, quint64 tsent, quint64 trecv, quint64 tdone);
+#endif
     QNetworkAccessBackend *backend;
     QIODevice *outgoingData;
     QSharedPointer<QRingBuffer> outgoingDataBuffer;
@@ -187,7 +193,9 @@ public:
     qint64 lastBytesDownloaded;
     qint64 bytesUploaded;
     qint64 preMigrationDownloaded;
-
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    qint64 compressedBytes, readBytes, totalBytes;
+#endif
     QString httpReasonPhrase;
     int httpStatusCode;
 

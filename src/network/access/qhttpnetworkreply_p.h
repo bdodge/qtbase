@@ -109,6 +109,9 @@ public:
 
     qint64 bytesAvailable() const;
     qint64 bytesAvailableNextBlock() const;
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    qint64 bytesDecompressed() const;
+#endif
     bool readAnyAvailable() const;
     QByteArray readAny();
     QByteArray readAll();
@@ -164,6 +167,10 @@ Q_SIGNALS:
 #endif
     void authenticationRequired(const QHttpNetworkRequest &request, QAuthenticator *authenticator);
     void redirected(const QUrl &url, int httpStatus, int maxRedirectsRemaining);
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    void dataDecompressionProgress(int done, int totalcomp, int totaldecomp);
+    void connectionStats(quint64 topened, quint64 tresolved, quint64 tconnected, quint64 tssl, quint64 tsent, quint64 trecv, quint64 tdone);
+#endif
 private:
     Q_DECLARE_PRIVATE(QHttpNetworkReply)
     friend class QHttpSocketEngine;
@@ -251,6 +258,9 @@ public:
 
     QByteDataBuffer responseData; // uncompressed body
     QByteArray compressedData; // compressed body (temporary)
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    qint64 compressedTotal; // total bytes of compressed data decompressed
+#endif
     bool requestIsPrepared;
 
     bool pipeliningUsed;

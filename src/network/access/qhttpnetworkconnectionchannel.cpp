@@ -181,9 +181,27 @@ void QHttpNetworkConnectionChannel::init()
     if (proxy.type() != QNetworkProxy::NoProxy)
         socket->setProxy(proxy);
 #endif
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    QObject::connect(socket, SIGNAL(hostFound()),
+                     this, SLOT(_q_hostFound()),
+                     Qt::DirectConnection);
+    tOpened = 0;
+    tResolved = 0;
+    tConnected = 0;
+    tSSL = 0;
+    tSent = 0;
+    tRecv = 0;
+    tDone = 0;
+#endif
     isInitialized = true;
 }
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+void QHttpNetworkConnectionChannel::_q_hostFound()
+{
+    tResolved = QDateTime::currentMSecsSinceEpoch();
+}
+#endif
 
 void QHttpNetworkConnectionChannel::close()
 {
@@ -228,7 +246,13 @@ void QHttpNetworkConnectionChannel::abort()
 bool QHttpNetworkConnectionChannel::sendRequest()
 {
     Q_ASSERT(!protocolHandler.isNull());
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    bool sendStatus = protocolHandler->sendRequest();
+    tSent = QDateTime::currentMSecsSinceEpoch();
+    return tSent;
+#else
     return protocolHandler->sendRequest();
+#endif
 }
 
 
@@ -240,6 +264,9 @@ void QHttpNetworkConnectionChannel::_q_receiveReply()
 
 void QHttpNetworkConnectionChannel::_q_readyRead()
 {
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    tRecv = QDateTime::currentMSecsSinceEpoch();
+#endif
     Q_ASSERT(!protocolHandler.isNull());
     protocolHandler->_q_readyRead();
 }
@@ -299,7 +326,16 @@ bool QHttpNetworkConnectionChannel::ensureConnection()
         // connect to the host if not already connected.
         state = QHttpNetworkConnectionChannel::ConnectingState;
         pendingEncrypt = ssl;
-
+#ifdef PHANTOM_TIMING_EXTENSIONS
+        // starting a connection
+        tOpened = QDateTime::currentMSecsSinceEpoch();
+        tConnected = 0;
+        tResolved = 0;
+        tSent = 0;
+        tSSL = 0;
+        tRecv = 0;
+        tDone = 0;
+#endif
         // reset state
         pipeliningSupported = PipeliningSupportUnknown;
         authenticationCredentialsSent = false;
@@ -396,6 +432,24 @@ bool QHttpNetworkConnectionChannel::ensureConnection()
         }
         return false;
     }
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    else
+    {
+        // already connected. If tOpen is 0, assume opened,
+        // resolved, and connected at this point
+        //
+        if (tOpened == 0)
+        {
+            tOpened = QDateTime::currentMSecsSinceEpoch();
+            tConnected = tOpened;
+            tResolved = tOpened;
+            tSSL = 0; // ssl is always relative, not absolute
+            tSent = 0;
+            tRecv = 0;
+            tDone = 0;
+        }
+    }
+#endif
 
     // This code path for ConnectedState
     if (pendingEncrypt) {
@@ -411,6 +465,15 @@ void QHttpNetworkConnectionChannel::allDone()
 {
     Q_ASSERT(reply);
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    tDone = QDateTime::currentMSecsSinceEpoch();
+
+    //qDebug() << "bottom, httpnetchannel, emit stats, Reply is " << reply;
+    emit reply->connectionStats(tOpened, tResolved, tConnected, tSSL, tSent, tRecv, tDone);
+
+    // reset for next request in case its on same socket
+    tOpened = tResolved = tConnected = tSSL = tSent = tRecv = tDone = 0;
+#endif
     if (!reply) {
         qWarning() << "QHttpNetworkConnectionChannel::allDone() called without reply. Please report at http://bugreports.qt.io/";
         return;
@@ -813,6 +876,9 @@ void QHttpNetworkConnectionChannel::_q_connected()
 
     pipeliningSupported = QHttpNetworkConnectionChannel::PipeliningSupportUnknown;
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    tConnected = QDateTime::currentMSecsSinceEpoch();
+#endif
     // ### FIXME: if the server closes the connection unexpectedly, we shouldn't send the same broken request again!
     //channels[i].reconnectAttempts = 2;
     if (ssl || pendingEncrypt) { // FIXME: Didn't work properly with pendingEncrypt only, we should refactor this into an EncrypingState
@@ -1057,6 +1123,14 @@ void QHttpNetworkConnectionChannel::_q_encrypted()
 
     if (!socket)
         return; // ### error
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    // HAR spec 1.2 says connect-time includes ssl time so
+    // that its compatible with HAR 1.1, so increase connect
+    // time to now and make ssl time = (now - prev connect time)
+    //
+    tSSL = QDateTime::currentMSecsSinceEpoch() - tConnected;
+    tConnected = QDateTime::currentMSecsSinceEpoch();
+#endif
     state = QHttpNetworkConnectionChannel::IdleState;
     pendingEncrypt = false;
 

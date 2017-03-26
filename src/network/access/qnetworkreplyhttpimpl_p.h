@@ -130,6 +130,11 @@ public:
     Q_PRIVATE_SLOT(d_func(), void _q_metaDataChanged())
     Q_PRIVATE_SLOT(d_func(), void onRedirected(const QUrl &, int, int))
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    Q_PRIVATE_SLOT(d_func(), void replyDownloadDecompressionProgressSlot(qint64,qint64,qint64))
+    Q_PRIVATE_SLOT(d_func(), void replyConnectionStatsSlot(quint64 topened, quint64 tresolved, quint64 tconnected, quint64 tssl, quint64 tsent, quint64 trecv, quint64 tdone))
+#endif
+
 #ifndef QT_NO_SSL
 protected:
     void ignoreSslErrors() Q_DECL_OVERRIDE;
@@ -257,7 +262,6 @@ public:
     QList<QSslError> pendingIgnoreSslErrorsList;
 #endif
 
-
     bool loadFromCacheIfAllowed(QHttpNetworkRequest &httpRequest);
     void invalidateCache();
     bool sendCacheContents(const QNetworkCacheMetaData &metaData);
@@ -283,6 +287,11 @@ public:
     void replySslErrors(const QList<QSslError> &, bool *, QList<QSslError> *);
     void replySslConfigurationChanged(const QSslConfiguration&);
     void replyPreSharedKeyAuthenticationRequiredSlot(QSslPreSharedKeyAuthenticator *);
+#endif
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    void replyDownloadDecompressionProgressSlot(qint64,qint64,qint64);
+    void replyConnectionStatsSlot(quint64 topened, quint64 tresolved, quint64 tconnected, quint64 tssl, quint64 tsent, quint64 trecv, quint64 tdone);
+    qint64 compressedBytes;
 #endif
 #ifndef QT_NO_NETWORKPROXY
     void proxyAuthenticationRequired(const QNetworkProxy &proxy, QAuthenticator *auth);

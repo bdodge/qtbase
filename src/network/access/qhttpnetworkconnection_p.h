@@ -174,6 +174,12 @@ public:
     static const int defaultPipelineLength;
     static const int defaultRePipelineLength;
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+    static int currentHttpChannelCount;
+    static void setHttpChannelCount(int count) { currentHttpChannelCount = (count > 0) ? count :
+            defaultHttpChannelCount; };
+#endif
+
     enum ConnectionState {
         RunningState = 0,
         PausedState = 1

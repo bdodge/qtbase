@@ -831,6 +831,14 @@ void QNetworkReplyHttpImplPrivate::postRequest(const QNetworkRequest &newHttpReq
         QObject::connect(delegate, SIGNAL(redirected(QUrl,int,int)),
                 q, SLOT(onRedirected(QUrl,int,int)),
                 Qt::QueuedConnection);
+#ifdef PHANTOM_TIMING_EXTENSIONS
+        QObject::connect(delegate, SIGNAL(downloadDecompressionProgress(qint64,qint64,qint64)),
+                q, SLOT(replyDownloadDecompressionProgressSlot(qint64,qint64,qint64)),
+                Qt::QueuedConnection);
+        QObject::connect(delegate, SIGNAL(connectionStats(quint64,quint64,quint64,quint64,quint64,quint64,quint64)),
+                q, SLOT(replyConnectionStatsSlot(quint64,quint64,quint64,quint64,quint64,quint64,quint64)),
+                Qt::QueuedConnection);
+#endif
 #ifndef QT_NO_SSL
         QObject::connect(delegate, SIGNAL(sslConfigurationChanged(QSslConfiguration)),
                 q, SLOT(replySslConfigurationChanged(QSslConfiguration)),
@@ -1303,6 +1311,35 @@ void QNetworkReplyHttpImplPrivate::replyDownloadProgressSlot(qint64 bytesReceive
         emit q->downloadProgress(bytesDownloaded, bytesTotal);
     }
 }
+
+#ifdef PHANTOM_TIMING_EXTENSIONS
+void QNetworkReplyHttpImplPrivate::replyDownloadDecompressionProgressSlot(qint64 bytesReceived,  qint64 bytesTotalComp, qint64 bytesTotalDecomp)
+{
+    Q_Q(QNetworkReplyHttpImpl);
+
+    // If we're closed just ignore this data
+    if (!q->isOpen())
+        return;
+
+    // set total uncompressed as well, since there is probably no content length header
+    if (bytesDownloaded <= 0)
+        bytesDownloaded = bytesTotalDecomp;
+    qDebug() << "QNetworkAccessHTTPbackend emitting compression progress, repl=" << q;
+    compressedBytes = bytesTotalComp;
+}
+
+void QNetworkReplyHttpImplPrivate::replyConnectionStatsSlot(quint64 topened, quint64 tresolved,
+        quint64 tconnected, quint64 tssl, quint64 tsent, quint64 trecv, quint64 tdone)
+{
+    Q_Q(QNetworkReplyHttpImpl);
+
+    // If we're closed just ignore this data
+    if (!q->isOpen())
+        return;
+    //qDebug() << "QNetworkAccessHTTPbackend emitting connection stats, repl=" << q;
+    emit q->connectionStats(topened, tresolved, tconnected, tssl, tsent, trecv, tdone);
+}
+#endif
 
 void QNetworkReplyHttpImplPrivate::httpAuthenticationRequired(const QHttpNetworkRequest &request,
                                                            QAuthenticator *auth)

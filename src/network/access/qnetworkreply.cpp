@@ -584,6 +584,22 @@ QUrl QNetworkReply::url() const
     return d_func()->url;
 }
 
+#ifdef PHANTOM_TIMING_EXTENSIONS
+// these are only implemented for http reply, meaningless here
+qint64 QNetworkReply::compressedBytes() const
+{
+    return 0;
+}
+qint64 QNetworkReply::readBytes() const
+{
+    return 0;
+}
+qint64 QNetworkReply::totalBytes() const
+{
+    return 0;
+}
+#endif
+
 /*!
     Returns the value of the known header \a header, if that header
     was sent by the remote server. If the header was not sent, returns
