@@ -15,6 +15,10 @@ mac {
     else: SUBDIRS += cocoa
 }
 
+contains(QT_CONFIG, phantom) {
+    !win32:!winrt: SUBDIRS += phantom
+}
+
 win32:!winrt: SUBDIRS += windows
 winrt: SUBDIRS += winrt
 
