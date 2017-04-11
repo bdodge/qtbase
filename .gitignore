@@ -161,6 +161,7 @@ tests/auto/cmake/build
 
 # xemacs temporary files
 *.flc
+*.bak
 
 # Vim temporary files
 .*.swp

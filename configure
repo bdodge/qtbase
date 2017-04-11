@@ -3274,8 +3274,9 @@ if [ "$XPLATFORM_ANDROID" != "no" ]; then
             echo "Can not detect the android host. Please use -android-ndk-host option to specify one"
             exit 1
         fi
-
-        QT_QPA_DEFAULT_PLATFORM="android"
+		if [ "$QT_QPA_DEFAULT_PLATFORM" != "phantom" ]; then
+	        QT_QPA_DEFAULT_PLATFORM="android"
+		fi
         CFG_LARGEFILE="no"
 
         DeviceVar set DEFAULT_ANDROID_SDK_ROOT "$CFG_DEFAULT_ANDROID_SDK_ROOT"

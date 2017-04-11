@@ -34,7 +34,9 @@
 #ifndef QPLATFORMDEFS_H
 #define QPLATFORMDEFS_H
 
+#ifndef QT_QPA_DEFAULT_PLATFORM_NAME
 #define QT_QPA_DEFAULT_PLATFORM_NAME "android"
+#endif
 
 // Get Qt defines/settings
 

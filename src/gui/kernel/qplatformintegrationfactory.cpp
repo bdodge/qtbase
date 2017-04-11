@@ -61,6 +61,11 @@ static inline QPlatformIntegration *loadIntegration(QFactoryLoader *loader, cons
 
 #endif // !QT_NO_LIBRARY
 
+#if defined(PHANTOM_LIBRARY_TARGET) && ! defined(QT_NO_DEBUG)
+// hack for android debug builds, see comment a few lines ago
+#include "/home/bdodge/unbound/code/phantomjs/src/qt/qtbase/src/plugins/platforms/phantom/phantomintegration.h"
+#endif
+
 QPlatformIntegration *QPlatformIntegrationFactory::create(const QString &platform, const QStringList &paramList, int &argc, char **argv, const QString &platformPluginPath)
 {
 #ifndef QT_NO_LIBRARY
@@ -72,6 +77,14 @@ QPlatformIntegration *QPlatformIntegrationFactory::create(const QString &platfor
     }
     if (QPlatformIntegration *ret = loadIntegration(loader(), platform, paramList, argc, argv))
         return ret;
+#if defined(PHANTOM_LIBRARY_TARGET) && ! defined(QT_NO_DEBUG)
+    // bdd - this is a complete hack needed to load the phantom integration.  it is only needed
+    // for qt debug builds on android, and is caused by (most likely) a bug in the compiler dealing
+    // with QVector and the integration gets put in properly with the static decl, but then disappears
+    //
+    if (QPlatformIntegration *ret = (QPlatformIntegration *)new PhantomIntegration)
+      return ret;
+#endif
 #else
     Q_UNUSED(platform);
     Q_UNUSED(paramList);
